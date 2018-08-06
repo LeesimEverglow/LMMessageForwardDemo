@@ -2,11 +2,11 @@
 
 [原理详细讲解地址](https://www.jianshu.com/p/fdd8f5225f0c)
 
-###写这篇文章的起因：
+# 写这篇文章的起因：
 从一个对象收到一个它无法响应的方法到崩溃之间发生了什么？
 这是J_Knight在最近在博客里面问到的一个问题。其实本质上是在问iOS的消息转发机制。类似的原理文章有很多，但大多数都是在单纯的讲原理，并没有讲解实际的用处。本文先对iOS的消息转发机制进行一个全面的原理讲解，并且在后面起一个引子告诉大家一些通过这个原理可以用来实现的功能，通过这些用途，可以更深刻的理解消息转发机制的本质，让我们能对费了很长时间理解的知识点的价值得更全面的认识。因为东西搞懂了是来用的，单纯的知道原理并不会对自身的提升太高的价值。
 
-###分析问题：
+# 分析问题：
 下面我会配合一个DEMO来做讲解
 
 [LMMessageForwardDemo Demo GitHub地址](https://github.com/LeesimEverglow/LMMessageForwardDemo)
@@ -23,7 +23,7 @@
 ```
 类似的报错都是iOS的消息转发机制在无法响应方法之后抛出的问题，我们下面就看一下消息转发机制
 
-###原理：
+# 原理：
 我们先看一下下面这个结构图，先对整个消息处理机制有一个初步的认识，很多讲解的过程中也都有类似的结构图，纯粹通过结构图来理解是不够的。
 ![iOS消息转发机制.jpeg](https://upload-images.jianshu.io/upload_images/1197929-2de08be6100cd895.jpeg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
@@ -34,7 +34,7 @@
 
 那么如果想要不抛出unrecognized selector 的报错，也就需要从这3步里面来做补救了，我们一步一步来看如何在这3个阶段来进行补救。
 
-#第一步：Method resolution 方法解析处理阶段
+### 第一步：Method resolution 方法解析处理阶段
 如果调用了对象方法首先会进行+(BOOL)resolveInstanceMethod:(SEL)sel判断
 如果调用了类方法 首先会进行 +(BOOL)resolveClassMethod:(SEL)sel判断
 两个方法都为类方法，如果YES则能接受消息 NO不能接受消息 进入第二步
@@ -85,7 +85,7 @@ return [super resolveClassMethod:sel];
 2018-08-06 15:25:25.667612+0800 MessageForwardDemo[3599:949889] 动态添加方法
 ```
 
-#第二步:Fast forwarding 快速转发阶段  （后面阶段都针对对象来处理，不考虑类方法）
+### 第二步:Fast forwarding 快速转发阶段  （后面阶段都针对对象来处理，不考虑类方法）
 如果在上一步的2个方法内返回的为YES则能接受消息 NO不能接受消息 进入第二步，我们先把上面方法内的处理方案注释掉，让消息转发进入第二步。
 我们新创建一个BackupTestMessage类，里面声明和实现testFunction方法，用来当作备用响应者。
 ```
@@ -103,7 +103,7 @@ return [super forwardingTargetForSelector:aSelector];
 ```
 已经让备用的对象去响应了TestMessage本身无法响应的一个SEL
 
-#第三部：Normal forwarding 常规转发阶段
+### 第三部：Normal forwarding 常规转发阶段
 如果第2步返回self或者nil,则说明没有可以响应的目标 则进入第三步。
 第三步的消息转发机制本质上跟第二步是一样的都是切换接受消息的对象，但是第三步切换响应目标更复杂一些，第二步里面只需返回一个可以响应的对象就可以了，第三步还需要手动将响应方法切换给备用响应对象。
 第三步有2个步骤：
@@ -156,9 +156,9 @@ if ([backUp respondsToSelector:sel]) {
 在三个步骤的每一步，消息接受者都还有机会去处理消息。同时，越往后面处理代价越高，最好的情况是在第一步就处理消息，这样runtime会在处理完后缓存结果，下回再发送同样消息的时候，可以提高处理效率。第二步转移消息的接受者也比进入转发流程的代价要小，如果到最后一步forwardInvocation的话，就需要处理完整的NSInvocation对象了。
 
 ###实际用途：（稍后会把用途和原理讲解完全）
-1.JSPatch
-2.为 @dynamic 实现方法
-3.代理模式实现
-4.多重继承
+1.JSPatch<br /> 
+2.为 @dynamic 实现方法<br /> 
+3.代理模式实现<br /> 
+4.多重继承<br /> 
 
 
