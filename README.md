@@ -155,10 +155,30 @@ if ([backUp respondsToSelector:sel]) {
 
 在三个步骤的每一步，消息接受者都还有机会去处理消息。同时，越往后面处理代价越高，最好的情况是在第一步就处理消息，这样runtime会在处理完后缓存结果，下回再发送同样消息的时候，可以提高处理效率。第二步转移消息的接受者也比进入转发流程的代价要小，如果到最后一步forwardInvocation的话，就需要处理完整的NSInvocation对象了。
 
-###实际用途：（稍后会把用途和原理讲解完全）
-1.JSPatch<br /> 
+###实际用途：
+1.JSPatch --iOS动态化更新方案<br /> 
+
+具体实现bang神已经在下面两篇博客内进行了详细的讲解，非常精妙的使用了，消息转发机制来进行JS和OC的交互，从而实现iOS的热更新。虽然去年苹果大力整改热更新让JSPatch的审核通过率在有一段时间里面无法过审，但是后面bang神对源码进行代码混淆之后，基本上是可以过审了。不论如何，这个动态化方案都是技术的一次进步，不过目前是被苹果爸爸打压的。不过如果在bang神的平台上用正规混淆版本别自己乱来，通过率还是可以的。有兴趣的同学可以看看这两篇原理文章，这里只摘出来用到消息转发的部分。
+
+[http://blog.cnbang.net/tech/2808/](http://blog.cnbang.net/tech/2808/)
+[http://blog.cnbang.net/tech/2855/](http://blog.cnbang.net/tech/2855/)
+
+![bang神博客相关消息转发内容.png](https://upload-images.jianshu.io/upload_images/1197929-ac9cad96a998099b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
+具体的实现原理可以去bang神的博客查看。
+
 2.为 @dynamic 实现方法<br /> 
-3.代理模式实现<br /> 
-4.多重继承<br /> 
+
+使用 @synthesize 可以为 @property 自动生成 getter 和 setter 方法（现 Xcode 版本中，会自动生成），而 @dynamic 则是告诉编译器，不用生成 getter 和 setter 方法。当使用 @dynamic 时，我们可以使用消息转发机制，来动态添加 getter 和 setter 方法。当然你也用其他的方法来实现。
+
+3.实现多重代理<br /> 
+
+利用消息转发机制可以无代码侵入的实现多重代理，让不同对象可以同时代理同个回调，然后在各自负责的区域进行相应的处理，降低了代码的耦合程度。
+
+[https://blog.csdn.net/kingjxust/article/details/49559091](https://blog.csdn.net/kingjxust/article/details/49559091)
+
+4.间接实现多继承<br /> 
+
+Objective-C本身不支持多继承，这是因为消息机制名称查找发生在运行时而非编译时，很难解决多个基类可能导致的二义性问题，但是可以通过消息转发机制在内部创建多个功能的对象，把不能实现的功能给转发到其他对象上去，这样就做出来一种多继承的假象。转发和继承相似，可用于为OC编程添加一些多继承的效果，一个对象把消息转发出去，就好像他把另一个对象中放法接过来或者“继承”一样。消息转发弥补了objc不支持多继承的性质，也避免了因为多继承导致单个类变得臃肿复杂。
 
 
